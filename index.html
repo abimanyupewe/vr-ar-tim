@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Leviathan & Submarine AR - Natural Orbit</title>
+    <title>Leviathan & Submarine AR - Natural Orbit with Controls</title>
 
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
@@ -15,39 +15,56 @@
       body {
         margin: 0;
         overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+      #controlPanel {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.5);
+        padding: 10px 20px;
+        border-radius: 10px;
+        display: flex;
+        gap: 10px;
+        z-index: 10;
+      }
+      #controlPanel button {
+        background: #007bff;
+        border: none;
+        color: white;
+        padding: 10px 15px;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.3s;
+      }
+      #controlPanel button:hover {
+        background: #0056b3;
       }
     </style>
   </head>
 
   <body>
+    <!-- Kontrol Tombol -->
+    <div id="controlPanel">
+      <button onclick="moveSubmarine('forward')">▲ Forward</button>
+      <button onclick="moveSubmarine('left')">◄ Left</button>
+      <button onclick="moveSubmarine('right')">► Right</button>
+      <button onclick="moveSubmarine('backward')">▼ Backward</button>
+    </div>
+
     <a-scene embedded arjs="sourceType: webcam;">
       <a-assets>
-        <a-asset-item
-          id="leviathanGhostModel"
-          src="assets/ghost_leviathan.glb"
-        ></a-asset-item>
-        <a-asset-item
-          id="leviathanShadowModel"
-          src="assets/shadow_leviathan.glb"
-        ></a-asset-item>
-        <a-asset-item
-          id="submarineModel"
-          src="assets/submarine.glb"
-        ></a-asset-item>
-        <audio
-          id="deepSeaSound"
-          src="assets/deepsea.mp3"
-          preload="auto"
-        ></audio>
+        <a-asset-item id="leviathanGhostModel" src="assets/ghost_leviathan.glb"></a-asset-item>
+        <a-asset-item id="leviathanShadowModel" src="assets/shadow_leviathan.glb"></a-asset-item>
+        <a-asset-item id="submarineModel" src="assets/submarine.glb"></a-asset-item>
+        <audio id="deepSeaSound" src="assets/deepsea.mp3" preload="auto"></audio>
         <audio id="stormSound" src="assets/badai.mp3" preload="auto"></audio>
       </a-assets>
 
-      <a-marker
-        preset="custom"
-        type="pattern"
-        url="assets/markerpat.patt"
-        size="1"
-      >
+      <a-marker preset="custom" type="pattern" url="assets/markerpat.patt" size="1">
         <!-- Leviathan Ghost -->
         <a-entity
           id="leviathanGhost"
@@ -81,19 +98,8 @@
         ></a-entity>
 
         <!-- Audio -->
-        <a-sound
-          id="deepSeaAudio"
-          src="#deepSeaSound"
-          autoplay="false"
-          loop="true"
-        ></a-sound>
-        <a-sound
-          id="stormAudio"
-          src="#stormSound"
-          autoplay="false"
-          loop="true"
-          volume="0.3"
-        ></a-sound>
+        <a-sound id="deepSeaAudio" src="#deepSeaSound" autoplay="false" loop="true"></a-sound>
+        <a-sound id="stormAudio" src="#stormSound" autoplay="false" loop="true" volume="0.3"></a-sound>
       </a-marker>
 
       <a-entity camera></a-entity>
@@ -112,6 +118,8 @@
       marker.addEventListener("markerFound", () => {
         deepSeaAudio.components.sound.playSound();
         stormAudio.components.sound.playSound();
+        // Start orbit animation
+        animateOrbit();
       });
 
       marker.addEventListener("markerLost", () => {
@@ -166,14 +174,33 @@
         leviathanGhost.setAttribute("rotation", { x: 0, y: rotationYGhost, z: 0 });
         leviathanShadow.setAttribute("rotation", { x: 0, y: rotationYShadow, z: 0 });
 
-        // Continue animation
-        requestAnimationFrame(animateOrbit);
+        // Continue animation if marker is still visible
+        if (marker.object3D.visible) {
+          requestAnimationFrame(animateOrbit);
+        }
       }
 
-      // Start animation loop after marker is found
-      marker.addEventListener("markerFound", () => {
-        animateOrbit();
-      });
+      // Submarine movement control
+      const moveStep = 0.1;
+
+      function moveSubmarine(direction) {
+        const pos = submarine.object3D.position;
+        switch (direction) {
+          case "forward":
+            pos.z -= moveStep;
+            break;
+          case "backward":
+            pos.z += moveStep;
+            break;
+          case "left":
+            pos.x -= moveStep;
+            break;
+          case "right":
+            pos.x += moveStep;
+            break;
+        }
+        submarine.object3D.position.set(pos.x, pos.y, pos.z);
+      }
     </script>
   </body>
 </html>
